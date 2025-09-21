@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>Pirate Chest & Scroll Flip</title>
+<style>
+body{
+  margin:0; min-height:100vh; display:flex; justify-content:center; align-items:center;
+  background: radial-gradient(1200px 600px at 50% 30%, rgba(255,231,153,.15), transparent 70%),
+              radial-gradient(circle at 50% 120%, #0a0a0a 0%, #0b0f1a 50%, #000 100%);
+  font-family: Georgia, serif; perspective:1000px; overflow:hidden;
+}
+
+body::before {
+  content:'';
+  position:fixed; top:0; left:0; width:100%; height:100%;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+  background-size: 50px 50px;
+  animation: stars 10s linear infinite;
+  pointer-events:none;
+}
+@keyframes stars { 0%{ background-position:0 0; } 100%{ background-position:-50px -50px; } }
+
+.stage{position:relative; width:min(760px,96vw); height:min(640px,92vh); display:flex; align-items:flex-end; justify-content:center;}
+.chest{--w:280px;width:var(--w);height:200px;position:relative;cursor:pointer;filter:drop-shadow(0 18px 30px rgba(0,0,0,.6)); user-select:none; z-index:5;}
+.chest:active{transform:scale(.98);}
+.box{position:absolute; bottom:0; left:0; right:0; height:130px; border-radius:10px; background:linear-gradient(#5a3318,#854c26); border:4px solid #3b2311;}
+.lid{position:absolute; bottom:130px; left:0; right:0; height:90px; border-radius:12px 12px 0 0;
+     background:linear-gradient(#5a3318,#854c26); border:4px solid #3b2311; border-bottom:none;
+     transform-origin: bottom center; transition: transform .6s cubic-bezier(.2,.8,.2,1);}
+.chest.open .lid{animation: lidBounce 0.6s forwards;}
+
+.chest.open::after {
+  content: '';
+  position: absolute;
+  top: -20px; left: 50%;
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, rgba(255,255,200,0.5) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: sparkle 1.5s infinite;
+  transform: translateX(-50%);
+}
+
+@keyframes sparkle {
+  0% { transform: translateX(-50%) scale(0.8); opacity:0.5; }
+  50% { transform: translateX(-50%) scale(1.1); opacity:1; }
+  100% { transform: translateX(-50%) scale(0.8); opacity:0.5; }
+}
+
+@keyframes lidBounce {
+  0% { transform: rotateX(0deg); }
+  60% { transform: rotateX(160deg); }
+  80% { transform: rotateX(140deg); }
+  100% { transform: rotateX(150deg); }
+}
+
+.glow{position:absolute; left:50%; bottom:130px; transform:translateX(-50%); width:240px; height:120px; border-radius:50%;
+      background: radial-gradient(circle, rgba(255,223,107,.45), transparent 70%); opacity:0; pointer-events:none; transition: opacity .4s ease;}
+.chest.open .glow{opacity:1}
+
+.scroll{position:absolute; bottom:220px; left:50%; transform:translateX(-50%) scale(.88); width:min(480px,88vw); max-height:90vh;
+        padding:0 18px; opacity:0; overflow:hidden; transition: transform .5s ease, opacity .4s ease; z-index:4;}
+.scroll.show{
+  opacity:1;
+  transform: translateX(-50%) translateY(-40px) rotateX(0deg) scale(1);
+  animation: flipScroll 0.8s forwards;
+}
+
+@keyframes flipScroll {
+  0% { transform: translateX(-50%) translateY(-40px) rotateX(90deg) scale(0.9); opacity:0; }
+  100% { transform: translateX(-50%) translateY(-40px) rotateX(0deg) scale(1); opacity:1; }
+}
+
+/* Scroll particle shimmer using CSS only */
+.scroll.show::before {
+  content:'';
+  position:absolute; top:0; left:0;
+  width:100%; height:100%;
+  pointer-events:none;
+  background:
+    radial-gradient(circle, rgba(255,255,255,0.3) 1px, transparent 2px),
+    radial-gradient(circle, rgba(255,255,255,0.2) 1px, transparent 2px);
+  background-size: 20px 20px, 30px 30px;
+  animation: floatParticles 3s infinite linear;
+}
+@keyframes floatParticles {
+  0% { background-position:0 0, 0 0; opacity:1; }
+  100% { background-position:0 -50px, 0 -70px; opacity:0.6; }
+}
+
+.scroll-inner{background:linear-gradient(#f7e5b7,#e2c98f); border:2px solid #b48a3b; border-radius:8px; padding:18px;
+             box-shadow:0 8px 20px rgba(0,0,0,.5); display:flex; flex-direction:column; align-items:center; gap:16px;
+             max-height:calc(100vh - 150px); overflow-y:auto; position:relative; transform-style:preserve-3d; transition: transform 0.8s;}
+
+.password-box{width:100%; display:flex; flex-direction:column; gap:8px; align-items:center; justify-content:center; transition: opacity .28s ease, transform .28s ease;}
+.password-box.hidden{opacity:0; transform:translateY(-8px); pointer-events:none;}
+.password-box input{padding:8px 10px; border-radius:6px; border:1px solid rgba(0,0,0,.2); font-size:16px; width:65%;}
+.password-box button{padding:8px 12px; border-radius:6px; border:0; background:#b48a3b; color:#111; font-weight:600; cursor:pointer;}
+.password-message{color:#222; font-weight:600; text-align:center;}
+.pass-msg{color:#8b1b1b; font-size:13px; min-height:18px; margin-top:4px;}
+.riddle{font-size:clamp(15px,1.8vw,20px); width:100%; text-align:left; line-height:1.3; min-height:48px;}
+.caret{display:inline-block; width:8px; animation:blink 1s steps(1) infinite;}
+@keyframes blink{50%{opacity:0}}
+.hint-btn, .back-btn{padding:8px 16px; border-radius:6px; border:0; background:#b48a3b; color:#111; font-weight:600; cursor:pointer; margin-top:16px;}
+.hint-btn{display:block; margin:16px auto;} 
+.back-btn{display:none; margin:16px auto;}
+.scroll-image{max-width:100%; height:auto; border-radius:4px; box-shadow:0 6px 14px rgba(0,0,0,.35); display:none; margin-top:12px;}
+@media(max-width:480px){
+  .scroll-inner{padding:12px; max-height:80vh;}
+  .password-box input{width:60%;}
+  .scroll-image{margin-top:8px;}
+}
+
+/* Shake animation for wrong password */
+.password-box.shake {
+  animation: shake 0.4s;
+}
+@keyframes shake {
+  0%,100%{ transform: translateX(0); }
+  20%{ transform: translateX(-8px); }
+  40%{ transform: translateX(8px); }
+  60%{ transform: translateX(-6px); }
+  80%{ transform: translateX(6px); }
+}
+
+/* Snake animation (curvy motion) */
+.snake {
+  position:absolute; bottom:130px; left:-60px; width:60px; height:20px;
+  background:green; border-radius:10px;
+  display:none;
+}
+.snake.move-right {
+  display:block;
+  animation: snakeWave 2s forwards;
+}
+.snake.bite {
+  display:block;
+  animation: snakeBite 0.6s forwards;
+}
+
+@keyframes snakeWave {
+  0% { left:-60px; transform: translateY(0) rotate(0deg); }
+  25% { left:25%; transform: translateY(-10px) rotate(10deg); }
+  50% { left:50%; transform: translateY(5px) rotate(-10deg); }
+  75% { left:75%; transform: translateY(-5px) rotate(5deg); }
+  100% { left:110%; transform: translateY(0) rotate(0deg); }
+}
+
+@keyframes snakeBite {
+  0%,100%{ transform: translateX(0) rotate(0deg); }
+  25%{ transform: translateX(-8px) rotate(-10deg); }
+  50%{ transform: translateX(8px) rotate(10deg); }
+  75%{ transform: translateX(-4px) rotate(-5deg); }
+}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="chest" id="chest" title="Click to open">
+    <div class="lid" id="lid"></div>
+    <div class="box"></div>
+    <div class="glow"></div>
+    <div class="snake" id="snake"></div>
+  </div>
+
+  <div class="scroll" id="scroll">
+    <div class="scroll-inner" id="scrollInner">
+      <div class="front">
+        <div class="password-box" id="passwordBox">
+          <div class="password-message" id="passwordMessage">
+            Enter the secret password to unlock the treasure
+          </div>
+          <input id="passInput" type="password" placeholder="Enter secret password" autocomplete="off"/>
+          <button id="passBtn">Unlock</button>
+        </div>
+        <div class="pass-msg" id="passMsg"></div>
+        <div class="riddle" id="riddle" style="visibility:hidden;"></div>
+        <button class="hint-btn" id="hintBtn">Hint</button>
+      </div>
+      <div class="back">
+        <img id="scrollImage" class="scroll-image" alt="Scroll Image"/>
+        <button class="back-btn" id="backBtn">Back to Riddle</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+  const chest=document.getElementById('chest');
+  const lid=document.getElementById('lid');
+  const scroll=document.getElementById('scroll');
+  const passwordBox=document.getElementById('passwordBox');
+  const passInput=document.getElementById('passInput');
+  const passBtn=document.getElementById('passBtn');
+  const passMsg=document.getElementById('passMsg');
+  const riddleBox=document.getElementById('riddle');
+  const hintBtn=document.getElementById('hintBtn');
+  const backBtn=document.getElementById('backBtn');
+  const scrollImage=document.getElementById('scrollImage');
+  const snake=document.getElementById('snake');
+  const passwordMessage=document.getElementById('passwordMessage');
+
+  const passwords=["pirate","treasure"];
+  const riddleText=`I stand so still, yet I can find
+What hides inside, what's left behind.
+I trap the air and hold it tight,
+Then check if all is sealed just right.
+
+No eyes, no ears — yet I can tell
+If something's wrong inside a shell.
+If air escapes, I raise the flag —
+A silent leak, I always snag.
+To know Who am I just ask him about me who is in hint`;
+  const imageURL="https://raw.githubusercontent.com/Pawankestwal/treasure_hunt.html/main/Images/Gemini_Generated_Image_c60lac60lac60lac.png";
+
+  let open=false, typingInterval=null;
+
+  function startTyping(text,onComplete){
+    clearInterval(typingInterval); riddleBox.textContent=""; riddleBox.style.visibility='visible';
+    const caret=document.createElement('span'); caret.className='caret'; caret.textContent='|'; riddleBox.appendChild(caret);
+    let i=0; 
+    typingInterval=setInterval(()=>{
+      if(i<text.length){ caret.insertAdjacentText('beforebegin', text[i++]); }
+      else{ clearInterval(typingInterval); caret.remove(); if(onComplete) onComplete(); }
+    },32);
+  }
+
+  function showError(msg){ 
+    passMsg.textContent=msg; 
+    passwordBox.classList.add('shake'); 
+    snake.classList.remove('move-right'); snake.classList.add('bite');
+    setTimeout(()=>{
+      passwordBox.classList.remove('shake'); 
+      snake.classList.remove('bite'); 
+      passInput.focus(); passInput.select();
+    },600);
+  }
+
+  function revealRiddle(){
+    // hide password message when riddle starts
+    passwordMessage.style.display='none';
+
+    passwordBox.classList.add('hidden'); 
+    snake.classList.remove('bite'); 
+    snake.classList.add('move-right');
+    setTimeout(()=>{
+      passwordBox.style.display='none';
+      startTyping(riddleText, ()=>{ hintBtn.style.display='block'; });
+    },260);
+  }
+
+  function openChest(){
+    open=true; chest.classList.add('open'); 
+    scroll.classList.add('show'); 
+    passwordBox.style.display='flex'; passwordBox.classList.remove('hidden');
+    passMsg.textContent=""; riddleBox.style.visibility='hidden'; riddleBox.textContent="";
+    hintBtn.style.display='none'; scrollImage.style.display='none'; backBtn.style.display='none';
+    snake.style.display='none';
+    passwordMessage.style.display='block';
+    setTimeout(()=>passInput.focus(),260);
+  }
+
+  function closeChest(){
+    open=false; clearInterval(typingInterval); riddleBox.textContent=""; passInput.value=""; passMsg.textContent="";
+    passwordBox.classList.remove('hidden'); passwordBox.style.display='flex';
+    hintBtn.style.display='none'; scrollImage.style.display='none'; backBtn.style.display='none';
+    lid.style.transform="rotateX(0deg)";
+    snake.style.display='none'; snake.className='snake';
+    setTimeout(()=>{ scroll.classList.remove('show'); chest.classList.remove('open'); },600);
+  }
+
+  function submitPassword(){
+    const entered=passInput.value??"";
+    if(passwords.includes(entered.toLowerCase())){
+      passMsg.textContent=""; revealRiddle(); 
+    } else { showError("Incorrect password. Try again."); }
+  }
+
+  chest.addEventListener('click',()=>{ if(!open) openChest(); });
+  passBtn.addEventListener('click',submitPassword);
+  passInput.addEventListener('keydown',(e)=>{ if(e.key==='Enter') submitPassword(); });
+
+  hintBtn.addEventListener('click',()=>{
+    riddleBox.style.visibility='hidden';
+    hintBtn.style.display='none';
+    scrollImage.src=imageURL;
+    scrollImage.style.display='block';
+    backBtn.style.display='block';
+  });
+
+  backBtn.addEventListener('click',()=>{
+    scrollImage.style.display='none';
+    backBtn.style.display='none';
+    riddleBox.style.visibility='visible';
+    hintBtn.style.display='block';
+  });
+
+  document.addEventListener('click',(e)=>{ if(open && !scroll.contains(e.target) && !chest.contains(e.target)) closeChest(); });
+});
+</script>
+</body>
+</html>
