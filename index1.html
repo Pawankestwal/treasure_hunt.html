@@ -1,165 +1,191 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Full Screen Treasure Hunt</title>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Treasure Hunt</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-  body, html {
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    font-family: Georgia, serif;
-  }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: Georgia, serif;
+      background-color: #2e1c0c; /* Matches background tone of chest image */
+    }
 
-  .chest {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    cursor: pointer;
-  }
+    .chest {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+      background-image: url('https://raw.githubusercontent.com/Pawankestwal/treasure_hunt.html/main/Images/Gemini_Generated_Image_7mlsk37mlsk37mls.png');
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: contain; /* Keep image proportions */
+      transition: background-image 0.5s ease;
+    }
 
-  .chest img {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
+    .chest.open {
+      background-image: url('https://raw.githubusercontent.com/Pawankestwal/treasure_hunt.html/main/Images/Gemini_Generated_Image_2gigao2gigao2gig.png');
+      background-color: #3e2a10; /* Slightly different tone for open chest */
+    }
 
-  .chest .open-img { display: none; }
-  .chest.open .closed-img { display: none; }
-  .chest.open .open-img { display: block; }
+    .glow {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 60%;
+      height: 60%;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 223, 107, 0.4), transparent 70%);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+    }
 
-  .glow {
-    position: absolute;
-    left: 50%; top: 50%;
-    transform: translate(-50%, -50%);
-    width: 60%; height: 60%;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(255,223,107,.4), transparent 70%);
-    opacity: 0; pointer-events: none;
-    transition: opacity .4s ease;
-  }
-  .chest.open .glow { opacity: 1; }
+    .chest.open .glow {
+      opacity: 1;
+    }
 
-  /* CENTERED SCROLL STYLES */
-  .scroll {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) scale(0.85);
-    width: 90%;
-    max-width: 420px;
-    max-height: 60vh;
-    padding: 0 16px;
-    opacity: 0;
-    overflow: hidden;
-    transition: transform .5s ease, opacity .5s ease, height .6s ease;
-    z-index: 10;
-  }
+    .scroll {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.85);
+      width: 90%;
+      max-width: 420px;
+      max-height: 60vh;
+      padding: 0 16px;
+      opacity: 0;
+      overflow: hidden;
+      transition: transform 0.5s ease, opacity 0.5s ease, height 0.6s ease;
+      z-index: 10;
+    }
 
-  .scroll-inner {
-    background: linear-gradient(#f7e5b7, #e2c98f);
-    border: 2px solid #b48a3b;
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 6px 16px rgba(0,0,0,.5);
-    overflow-y: auto;
-    max-height: 60vh;
-    touch-action: pan-y;
-  }
+    .scroll-inner {
+      background: linear-gradient(#f7e5b7, #e2c98f);
+      border: 2px solid #b48a3b;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+      overflow-y: auto;
+      max-height: 60vh;
+      touch-action: pan-y;
+    }
 
-  .scroll.show {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-  }
+    .scroll.show {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
 
-  .scroll.unroll {
-    height: auto;
-  }
+    .scroll.unroll {
+      height: auto;
+    }
 
-  .riddle {
-    font-size: clamp(16px, 2vw, 20px);
-    color: #000;
-    text-align: center;
-    line-height: 1.5;
-  }
+    .riddle {
+      font-size: clamp(16px, 2vw, 20px);
+      color: #000;
+      text-align: center;
+      line-height: 1.5;
+    }
 
-  .caret {
-    display: inline-block;
-    width: 8px;
-    animation: blink 1s steps(1) infinite;
-  }
+    .caret {
+      display: inline-block;
+      width: 8px;
+      animation: blink 1s steps(1) infinite;
+    }
 
-  @keyframes blink { 50% { opacity: 0; } }
-</style>
+    @keyframes blink {
+      50% {
+        opacity: 0;
+      }
+    }
+  </style>
 </head>
 <body>
   <div class="chest" id="chest">
-    <!-- Closed chest image -->
-    <img src="https://raw.githubusercontent.com/Pawankestwal/treasure_hunt.html/main/Images/Gemini_Generated_Image_7mlsk37mlsk37mls.png" alt="Closed Chest" class="closed-img">
-    <!-- Open chest image -->
-    <img src="https://raw.githubusercontent.com/Pawankestwal/treasure_hunt.html/main/Images/Gemini_Generated_Image_2gigao2gigao2gig.png" alt="Open Chest" class="open-img">
     <div class="glow"></div>
   </div>
 
-  <!-- Scroll element -->
+  <!-- Scroll overlay -->
   <div class="scroll" id="scroll">
     <div class="scroll-inner">
       <div class="riddle" id="riddle"></div>
     </div>
   </div>
 
-<script>
-  const chest = document.getElementById('chest');
-  const scroll = document.getElementById('scroll');
-  const riddleBox = document.getElementById('riddle');
-  const text = "Congratulations, Treasure Hunters! 🏆 Your hard work, sharp minds, and unbreakable determination have paid off! You successfully cracked the clues and found the treasure chest.\n\nThis victory is a reflection of your:\n- Strong teamwork 🤝\n- Creative problem-solving 🧠\n- Relentless perseverance 🔍\n\nIt wasn’t just luck — you earned every step of this journey.\n\nNot everyone can outsmart the hunt… but you did! Be proud — you’ve proven yourselves as true champions of the quest. 🏅";
+  <script>
+    const chest = document.getElementById('chest');
+    const scroll = document.getElementById('scroll');
+    const riddleBox = document.getElementById('riddle');
 
-  let open = false, timer = null;
+    const text = `Congratulations, Treasure Hunters! 🏆
+Your hard work, sharp minds, and unbreakable determination have paid off!
+You successfully cracked the clues and found the treasure chest.
 
-  function type(txt) {
-    clearInterval(timer);
-    riddleBox.textContent = "";
-    const caret = document.createElement('span');
-    caret.className = 'caret';
-    caret.textContent = '|';
-    riddleBox.appendChild(caret);
-    let i = 0;
-    timer = setInterval(() => {
-      if (i < txt.length) {
-        caret.insertAdjacentText('beforebegin', txt[i++]);
-      } else {
-        clearInterval(timer);
-      }
-    }, 35);
-  }
+This victory is a reflection of your:
+- Strong teamwork 🤝
+- Creative problem-solving 🧠
+- Relentless perseverance 🔍
 
-  function clearText() {
-    clearInterval(timer);
-    riddleBox.textContent = "";
-  }
+It wasn’t just luck — you earned every step of this journey.
+Not everyone can outsmart the hunt… but you did! Be proud — you’ve proven yourselves as true champions of the quest. 🏅`;
 
-  chest.addEventListener('click', () => {
-    if (!open) {
-      open = true;
-      chest.classList.add('open');
-      setTimeout(() => { scroll.classList.add('show'); }, 300);
-      setTimeout(() => {
-        scroll.classList.add('unroll');
-        type(text);
-      }, 800);
-    } else {
-      open = false;
-      clearText();
-      scroll.classList.remove('unroll');
-      setTimeout(() => { scroll.classList.remove('show'); }, 400);
-      setTimeout(() => { chest.classList.remove('open'); }, 700);
+    let open = false;
+    let timer = null;
+
+    function type(txt) {
+      clearInterval(timer);
+      riddleBox.textContent = '';
+      const caret = document.createElement('span');
+      caret.className = 'caret';
+      caret.textContent = '|';
+      riddleBox.appendChild(caret);
+      let i = 0;
+      timer = setInterval(() => {
+        if (i < txt.length) {
+          caret.insertAdjacentText('beforebegin', txt[i++]);
+        } else {
+          clearInterval(timer);
+        }
+      }, 35);
     }
-  });
-</script>
+
+    function clearText() {
+      clearInterval(timer);
+      riddleBox.textContent = '';
+    }
+
+    chest.addEventListener('click', () => {
+      if (!open) {
+        open = true;
+        chest.classList.add('open');
+        setTimeout(() => {
+          scroll.classList.add('show');
+        }, 300);
+        setTimeout(() => {
+          scroll.classList.add('unroll');
+          type(text);
+        }, 800);
+      } else {
+        open = false;
+        clearText();
+        scroll.classList.remove('unroll');
+        setTimeout(() => {
+          scroll.classList.remove('show');
+        }, 400);
+        setTimeout(() => {
+          chest.classList.remove('open');
+        }, 700);
+      }
+    });
+  </script>
 </body>
 </html>
