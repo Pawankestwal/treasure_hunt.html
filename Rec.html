@@ -1,300 +1,425 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-<title>Pirate Chest & Scroll Flip</title>
+<meta charset="UTF-8">
+<title>Blue Star Quiz</title>
+
 <style>
-body{
-  margin:0; min-height:100vh; display:flex; justify-content:center; align-items:center;
-  background: radial-gradient(1200px 600px at 50% 30%, rgba(255,231,153,.15), transparent 70%),
-              radial-gradient(circle at 50% 120%, #0a0a0a 0%, #0b0f1a 50%, #000 100%);
-  font-family: Georgia, serif; perspective:1000px; overflow:hidden;
-}
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: linear-gradient(to bottom, #66b5ff, #1f6bff);
+        user-select: none;
+    }
 
-body::before {
-  content:'';
-  position:fixed; top:0; left:0; width:100%; height:100%;
-  background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
-  background-size: 50px 50px;
-  animation: stars 10s linear infinite;
-  pointer-events:none;
-}
-@keyframes stars { 0%{ background-position:0 0; } 100%{ background-position:-50px -50px; } }
+    /* Login Overlay */
+    #startOverlay {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(0,0,0,0.35);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
 
-.stage{position:relative; width:min(760px,96vw); height:min(640px,92vh); display:flex; align-items:flex-end; justify-content:center;}
-.chest{--w:280px;width:var(--w);height:200px;position:relative;cursor:pointer;filter:drop-shadow(0 18px 30px rgba(0,0,0,.6)); user-select:none; z-index:5;}
-.chest:active{transform:scale(.98);}
-.box{position:absolute; bottom:0; left:0; right:0; height:130px; border-radius:10px; background:linear-gradient(#5a3318,#854c26); border:4px solid #3b2311;}
-.lid{position:absolute; bottom:130px; left:0; right:0; height:90px; border-radius:12px 12px 0 0;
-     background:linear-gradient(#5a3318,#854c26); border:4px solid #3b2311; border-bottom:none;
-     transform-origin: bottom center; transition: transform .6s cubic-bezier(.2,.8,.2,1);}
-.chest.open .lid{animation: lidBounce 0.6s forwards;}
+    .start-box {
+        width: 320px;
+        padding: 25px;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.3);
+        display: flex;
+        flex-direction: column;
+    }
 
-.chest.open::after {
-  content: '';
-  position: absolute;
-  top: -20px; left: 50%;
-  width: 200px; height: 200px;
-  background: radial-gradient(circle, rgba(255,255,200,0.5) 0%, transparent 70%);
-  border-radius: 50%;
-  animation: sparkle 1.5s infinite;
-  transform: translateX(-50%);
-}
+    .start-box input {
+        margin-top: 6px;
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid #bbb;
+        font-size: 15px;
+    }
 
-@keyframes sparkle {
-  0% { transform: translateX(-50%) scale(0.8); opacity:0.5; }
-  50% { transform: translateX(-50%) scale(1.1); opacity:1; }
-  100% { transform: translateX(-50%) scale(0.8); opacity:0.5; }
-}
+    .start-box button {
+        margin-top: 15px;
+        padding: 12px;
+        border: none;
+        background: #1f6bff;
+        color: white;
+        border-radius: 10px;
+        font-size: 16px;
+        cursor: pointer;
+    }
 
-@keyframes lidBounce {
-  0% { transform: rotateX(0deg); }
-  60% { transform: rotateX(160deg); }
-  80% { transform: rotateX(140deg); }
-  100% { transform: rotateX(150deg); }
-}
+    /* Quiz top panel */
+    #topBar {
+        padding: 10px;
+        color: white;
+        font-size: 18px;
+        display: flex;
+        justify-content: space-between;
+        padding-left: 20px;
+        padding-right: 20px;
+    }
 
-.glow{position:absolute; left:50%; bottom:130px; transform:translateX(-50%); width:240px; height:120px; border-radius:50%;
-      background: radial-gradient(circle, rgba(255,223,107,.45), transparent 70%); opacity:0; pointer-events:none; transition: opacity .4s ease;}
-.chest.open .glow{opacity:1}
+    /* Timer box */
+    #timerBox {
+        background: rgba(255,255,255,0.25);
+        padding: 7px 14px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
 
-.scroll{position:absolute; bottom:220px; left:50%; transform:translateX(-50%) scale(.88); width:min(480px,88vw); max-height:90vh;
-        padding:0 18px; opacity:0; overflow:hidden; transition: transform .5s ease, opacity .4s ease; z-index:4;}
-.scroll.show{
-  opacity:1;
-  transform: translateX(-50%) translateY(-40px) rotateX(0deg) scale(1);
-  animation: flipScroll 0.8s forwards;
-}
+    /* Center number circle */
+    #questionCircle {
+        width: 90px;
+        height: 90px;
+        border-radius: 50%;
+        background: white;
+        color: #1f6bff;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 30px;
+        font-weight: bold;
+        margin: 10px auto;
+    }
 
-@keyframes flipScroll {
-  0% { transform: translateX(-50%) translateY(-40px) rotateX(90deg) scale(0.9); opacity:0; }
-  100% { transform: translateX(-50%) translateY(-40px) rotateX(0deg) scale(1); opacity:1; }
-}
+    /* Progress bar */
+    #progressBarOuter {
+        width: 80%;
+        height: 10px;
+        background: rgba(255,255,255,0.4);
+        border-radius: 20px;
+        margin: 10px auto;
+        overflow: hidden;
+    }
 
-/* Scroll particle shimmer using CSS only */
-.scroll.show::before {
-  content:'';
-  position:absolute; top:0; left:0;
-  width:100%; height:100%;
-  pointer-events:none;
-  background:
-    radial-gradient(circle, rgba(255,255,255,0.3) 1px, transparent 2px),
-    radial-gradient(circle, rgba(255,255,255,0.2) 1px, transparent 2px);
-  background-size: 20px 20px, 30px 30px;
-  animation: floatParticles 3s infinite linear;
-}
-@keyframes floatParticles {
-  0% { background-position:0 0, 0 0; opacity:1; }
-  100% { background-position:0 -50px, 0 -70px; opacity:0.6; }
-}
+    #progressBarInner {
+        width: 0%;
+        height: 100%;
+        background: #00eaff;
+        border-radius: 20px;
+    }
 
-.scroll-inner{background:linear-gradient(#f7e5b7,#e2c98f); border:2px solid #b48a3b; border-radius:8px; padding:18px;
-             box-shadow:0 8px 20px rgba(0,0,0,.5); display:flex; flex-direction:column; align-items:center; gap:16px;
-             max-height:calc(100vh - 150px); overflow-y:auto; position:relative; transform-style:preserve-3d; transition: transform 0.8s;}
+    /* Question container */
+    #questionBox {
+        width: 85%;
+        margin: 20px auto;
+        padding: 20px;
+        background: white;
+        border-radius: 20px;
+        text-align: center;
+    }
 
-.password-box{width:100%; display:flex; flex-direction:column; gap:8px; align-items:center; justify-content:center; transition: opacity .28s ease, transform .28s ease;}
-.password-box.hidden{opacity:0; transform:translateY(-8px); pointer-events:none;}
-.password-box input{padding:8px 10px; border-radius:6px; border:1px solid rgba(0,0,0,.2); font-size:16px; width:65%;}
-.password-box button{padding:8px 12px; border-radius:6px; border:0; background:#b48a3b; color:#111; font-weight:600; cursor:pointer;}
-.password-message{color:#222; font-weight:600; text-align:center;}
-.pass-msg{color:#8b1b1b; font-size:13px; min-height:18px; margin-top:4px;}
-.riddle{font-size:clamp(15px,1.8vw,20px); width:100%; text-align:left; line-height:1.3; min-height:48px;}
-.caret{display:inline-block; width:8px; animation:blink 1s steps(1) infinite;}
-@keyframes blink{50%{opacity:0}}
-.hint-btn, .back-btn{padding:8px 16px; border-radius:6px; border:0; background:#b48a3b; color:#111; font-weight:600; cursor:pointer; margin-top:16px;}
-.hint-btn{display:block; margin:16px auto;} 
-.back-btn{display:none; margin:16px auto;}
-.scroll-image{max-width:100%; height:auto; border-radius:4px; box-shadow:0 6px 14px rgba(0,0,0,.35); display:none; margin-top:12px;}
-@media(max-width:480px){
-  .scroll-inner{padding:12px; max-height:80vh;}
-  .password-box input{width:60%;}
-  .scroll-image{margin-top:8px;}
-}
+    .option {
+        border: 2px solid #d0d0d0;
+        padding: 13px;
+        margin-top: 15px;
+        border-radius: 12px;
+        font-size: 17px;
+        cursor: pointer;
+        background: #f9f9f9;
+    }
 
-/* Shake animation for wrong password */
-.password-box.shake {
-  animation: shake 0.4s;
-}
-@keyframes shake {
-  0%,100%{ transform: translateX(0); }
-  20%{ transform: translateX(-8px); }
-  40%{ transform: translateX(8px); }
-  60%{ transform: translateX(-6px); }
-  80%{ transform: translateX(6px); }
-}
+    .option:hover {
+        background: #eaf1ff;
+        border-color: #1f6bff;
+    }
 
-/* Snake animation (curvy motion) */
-.snake {
-  position:absolute; bottom:130px; left:-60px; width:60px; height:20px;
-  background:green; border-radius:10px;
-  display:none;
-}
-.snake.move-right {
-  display:block;
-  animation: snakeWave 2s forwards;
-}
-.snake.bite {
-  display:block;
-  animation: snakeBite 0.6s forwards;
-}
-
-@keyframes snakeWave {
-  0% { left:-60px; transform: translateY(0) rotate(0deg); }
-  25% { left:25%; transform: translateY(-10px) rotate(10deg); }
-  50% { left:50%; transform: translateY(5px) rotate(-10deg); }
-  75% { left:75%; transform: translateY(-5px) rotate(5deg); }
-  100% { left:110%; transform: translateY(0) rotate(0deg); }
-}
-
-@keyframes snakeBite {
-  0%,100%{ transform: translateX(0) rotate(0deg); }
-  25%{ transform: translateX(-8px) rotate(-10deg); }
-  50%{ transform: translateX(8px) rotate(10deg); }
-  75%{ transform: translateX(-4px) rotate(-5deg); }
-}
+    /* Bottom panel */
+    #bottomBar {
+        width: 85%;
+        margin: auto;
+        display: flex;
+        justify-content: space-between;
+        color: white;
+        font-size: 18px;
+        margin-top: 20px;
+    }
 </style>
 </head>
 <body>
-<div class="stage">
-  <div class="chest" id="chest" title="Click to open">
-    <div class="lid" id="lid"></div>
-    <div class="box"></div>
-    <div class="glow"></div>
-    <div class="snake" id="snake"></div>
-  </div>
 
-  <div class="scroll" id="scroll">
-    <div class="scroll-inner" id="scrollInner">
-      <div class="front">
-        <div class="password-box" id="passwordBox">
-          <div class="password-message" id="passwordMessage">
-            In which year did Mohan T. Advani Sir establish Blue Star?
-          </div>
-          <input id="passInput" type="password" placeholder="Enter secret password" autocomplete="off"/>
-          <button id="passBtn">Unlock</button>
-        </div>
-        <div class="pass-msg" id="passMsg"></div>
-        <div class="riddle" id="riddle" style="visibility:hidden;"></div>
-        <button class="hint-btn" id="hintBtn">Hint</button>
-      </div>
-      <div class="back">
-        <img id="scrollImage" class="scroll-image" alt="Scroll Image"/>
-        <button class="back-btn" id="backBtn">Back to Riddle</button>
-      </div>
+<!-- LOGIN SCREEN -->
+<div id="startOverlay">
+    <div class="start-box">
+        <h3 style="color:#1f6bff;text-align:center;">Blue Star Quiz</h3>
+
+        <label>Your Name</label>
+        <input id="nameInput" onkeydown="nextField(event,'emailInput')">
+
+        <label style="margin-top:10px;">Email / Employee ID</label>
+        <input id="emailInput" onkeydown="nextField(event,'deptInput')">
+
+        <label style="margin-top:10px;">Department</label>
+        <input id="deptInput" onkeydown="startOnEnter(event)">
+
+        <button onclick="beginQuiz()">Start Quiz</button>
     </div>
-  </div>
 </div>
 
+<!-- QUIZ UI -->
+<div id="quizArea" style="display:none;">
+
+    <div id="topBar">
+        <div style="text-align:center;">
+            <div style="margin-bottom:5px;">Correct</div>
+            <div id="correctCount">0</div>
+        </div>
+
+        <div id="timerBox">
+            ⏱ <span id="timerTxt">20s</span>
+        </div>
+
+        <div style="text-align:center;">
+            <div style="margin-bottom:5px;">Incorrect</div>
+            <div id="wrongCount">0</div>
+        </div>
+    </div>
+
+    <div id="questionCircle">1</div>
+
+    <div id="progressBarOuter">
+        <div id="progressBarInner"></div>
+    </div>
+
+    <div id="questionBox"></div>
+
+    <div id="bottomBar">
+        <div>Score: <span id="scoreVal">0</span></div>
+        <div>+50 / -50</div>
+    </div>
+</div>
+
+<!-- RESULT SCREEN WILL BE INJECTED HERE -->
+<div id="mainArea"></div>
+
 <script>
-document.addEventListener('DOMContentLoaded',()=>{
-  const chest=document.getElementById('chest');
-  const lid=document.getElementById('lid');
-  const scroll=document.getElementById('scroll');
-  const passwordBox=document.getElementById('passwordBox');
-  const passInput=document.getElementById('passInput');
-  const passBtn=document.getElementById('passBtn');
-  const passMsg=document.getElementById('passMsg');
-  const riddleBox=document.getElementById('riddle');
-  const hintBtn=document.getElementById('hintBtn');
-  const backBtn=document.getElementById('backBtn');
-  const scrollImage=document.getElementById('scrollImage');
-  const snake=document.getElementById('snake');
-  const passwordMessage=document.getElementById('passwordMessage');
+/* ---------------- LOGIN FIELD AUTO-JUMP ----------------- */
+function nextField(e, nextID) {
+    if (e.key === "Enter") {
+        document.getElementById(nextID).focus();
+    }
+}
+function startOnEnter(e) {
+    if (e.key === "Enter") beginQuiz();
+}
 
-  const passwords=["2001","1943"];
-  const riddleText=`Jahan ek soch ne li thi pehli saans,
-Wahi chhupi hai aaj ki pehchaan.
-Rango se saja ek aisa paigam,
-Jo sirf nazar samjhe, haath na kar paaye kaam.
-Sheeshe ke peeche qaid hai raaz,
-Dhoondhne waala paaye agla andaaz."`;
-  const imageURL="https://raw.githubusercontent.com/Pawankestwal/treasure_hunt.html/main/Images/Gemini_Generated_Image_cqgfpbcqgfpbcqgf.png";
+/* ------------------ QUIZ VARIABLES ------------------- */
+let currentQ = 0;
+let score = 0;
+let correct = 0;
+let incorrect = 0;
+let timer;
+let timeLeft = 20;
 
-  let open=false, typingInterval=null;
+/* -------- Blue Star Production Questions (with image) -------- */
+const questions = [
+    {
+        q: "Blue Star primarily manufactures which products?",
+        options: ["Refrigeration & Cooling Systems", "Shoes", "Furniture", "Cement"],
+        answer: "Refrigeration & Cooling Systems"
+    },
+    {
+        q: "Which production step ensures quality?",
+        img: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Assembly_line.jpg/640px-Assembly_line.jpg",
+        options: ["Assembly Line Inspection", "Finance", "Legal", "HR"],
+        answer: "Assembly Line Inspection"
+    },
+    {
+        q: "Blue Star’s factory uses which manufacturing method?",
+        options: ["Batch Production", "3D Printing", "Hand Stitching", "Mining"],
+        answer: "Batch Production"
+    },
+    {
+        q: "Which gas is used in Blue Star cooling systems?",
+        options: ["Refrigerant Gas", "LPG", "Helium", "Nitrogen"],
+        answer: "Refrigerant Gas"
+    },
+    {
+        q: "What is the key component of an AC compressor?",
+        options: ["Motor", "Speaker", "Wood", "Battery"],
+        answer: "Motor"
+    },
+    {
+        q: "Which tool is used for metal sheet cutting?",
+        options: ["Laser Cutter", "Knife", "Hammer", "Screw"],
+        answer: "Laser Cutter"
+    },
+    {
+        q: "Which department handles product testing?",
+        options: ["Quality Control", "Marketing", "Accounts", "Logistics"],
+        answer: "Quality Control"
+    },
+    {
+        q: "Which part cools the refrigerant?",
+        options: ["Condenser Coil", "Rubber Hose", "Plastic Cap", "Steel Rod"],
+        answer: "Condenser Coil"
+    },
+    {
+        q: "Which metal is commonly used in AC coils?",
+        options: ["Copper", "Gold", "Iron", "Silver"],
+        answer: "Copper"
+    },
+    {
+        q: "Blue Star is known for which major sector?",
+        options: ["Cooling & Commercial Refrigeration", "Oil Drilling", "Car Manufacturing", "Pharma"],
+        answer: "Cooling & Commercial Refrigeration"
+    }
+];
 
-  function startTyping(text,onComplete){
-    clearInterval(typingInterval); riddleBox.textContent=""; riddleBox.style.visibility='visible';
-    const caret=document.createElement('span'); caret.className='caret'; caret.textContent='|'; riddleBox.appendChild(caret);
-    let i=0; 
-    typingInterval=setInterval(()=>{
-      if(i<text.length){ caret.insertAdjacentText('beforebegin', text[i++]); }
-      else{ clearInterval(typingInterval); caret.remove(); if(onComplete) onComplete(); }
-    },32);
-  }
+/* ---------------- START QUIZ ----------------- */
+function beginQuiz() {
+    document.getElementById("startOverlay").style.display = "none";
+    document.getElementById("quizArea").style.display = "block";
+    loadQuestion();
+}
 
-  function showError(msg){ 
-    passMsg.textContent=msg; 
-    passwordBox.classList.add('shake'); 
-    snake.classList.remove('move-right'); snake.classList.add('bite');
-    setTimeout(()=>{
-      passwordBox.classList.remove('shake'); 
-      snake.classList.remove('bite'); 
-      passInput.focus(); passInput.select();
-    },600);
-  }
+/* ---------------- LOAD QUESTION ----------------- */
+function loadQuestion() {
+    if (currentQ >= questions.length) {
+        showResults();
+        return;
+    }
 
-  function revealRiddle(){
-    // hide password message when riddle starts
-    passwordMessage.style.display='none';
+    document.getElementById("questionCircle").innerText = currentQ + 1;
 
-    passwordBox.classList.add('hidden'); 
-    snake.classList.remove('bite'); 
-    snake.classList.add('move-right');
-    setTimeout(()=>{
-      passwordBox.style.display='none';
-      startTyping(riddleText, ()=>{ hintBtn.style.display='block'; });
-    },260);
-  }
+    let q = questions[currentQ];
+    let html = "";
 
-  function openChest(){
-    open=true; chest.classList.add('open'); 
-    scroll.classList.add('show'); 
-    passwordBox.style.display='flex'; passwordBox.classList.remove('hidden');
-    passMsg.textContent=""; riddleBox.style.visibility='hidden'; riddleBox.textContent="";
-    hintBtn.style.display='none'; scrollImage.style.display='none'; backBtn.style.display='none';
-    snake.style.display='none';
-    passwordMessage.style.display='block';
-    setTimeout(()=>passInput.focus(),260);
-  }
+    if (q.img) {
+        html += `<img src="${q.img}" style="max-width:120px;margin-bottom:10px;">`;
+    }
 
-  function closeChest(){
-    open=false; clearInterval(typingInterval); riddleBox.textContent=""; passInput.value=""; passMsg.textContent="";
-    passwordBox.classList.remove('hidden'); passwordBox.style.display='flex';
-    hintBtn.style.display='none'; scrollImage.style.display='none'; backBtn.style.display='none';
-    lid.style.transform="rotateX(0deg)";
-    snake.style.display='none'; snake.className='snake';
-    setTimeout(()=>{ scroll.classList.remove('show'); chest.classList.remove('open'); },600);
-  }
+    html += `<h3 style="color:#1f6bff;">${q.q}</h3>`;
 
-  function submitPassword(){
-    const entered=passInput.value??"";
-    if(passwords.includes(entered.toLowerCase())){
-      passMsg.textContent=""; revealRiddle(); 
-    } else { showError("Incorrect password. Try again."); }
-  }
+    q.options.forEach(opt => {
+        html += `<div class="option" onclick="choose('${opt}')">${opt}</div>`;
+    });
 
-  chest.addEventListener('click',()=>{ if(!open) openChest(); });
-  passBtn.addEventListener('click',submitPassword);
-  passInput.addEventListener('keydown',(e)=>{ if(e.key==='Enter') submitPassword(); });
+    document.getElementById("questionBox").innerHTML = html;
 
-  hintBtn.addEventListener('click',()=>{
-    riddleBox.style.visibility='hidden';
-    hintBtn.style.display='none';
-    scrollImage.src=imageURL;
-    scrollImage.style.display='block';
-    backBtn.style.display='block';
-  });
+    updateProgress();
+    startTimer();
+}
 
-  backBtn.addEventListener('click',()=>{
-    scrollImage.style.display='none';
-    backBtn.style.display='none';
-    riddleBox.style.visibility='visible';
-    hintBtn.style.display='block';
-  });
+/* ---------------- TIMER ----------------- */
+function startTimer() {
+    clearInterval(timer);
+    timeLeft = 20;
+    document.getElementById("timerTxt").innerText = timeLeft + "s";
 
-  document.addEventListener('click',(e)=>{ if(open && !scroll.contains(e.target) && !chest.contains(e.target)) closeChest(); });
-});
+    timer = setInterval(() => {
+        timeLeft--;
+        document.getElementById("timerTxt").innerText = timeLeft + "s";
+
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            incorrect++;
+            currentQ++;
+            loadQuestion();
+        }
+    }, 1000);
+}
+
+/* ---------------- OPTION CLICK WITH TICK & CROSS ----------------- */
+function choose(opt) {
+    clearInterval(timer);
+
+    let q = questions[currentQ];
+    let options = document.querySelectorAll(".option");
+    let correctAnsIndex = q.options.indexOf(q.answer);
+    let clickedIndex = q.options.indexOf(opt);
+
+    // Disable all selections
+    options.forEach(o => o.style.pointerEvents = "none");
+
+    // Add tick/cross marks
+    options.forEach((btn, i) => {
+        const mark = document.createElement("span");
+        mark.className = "mark";
+
+        if (i === correctAnsIndex) {
+            btn.classList.add("correctOption");
+            mark.innerHTML = "✔";
+            mark.style.color = "#0bcf4e";
+            btn.appendChild(mark);
+        }
+
+        if (i === clickedIndex && clickedIndex !== correctAnsIndex) {
+            btn.classList.add("wrongOption");
+            mark.innerHTML = "✖";
+            mark.style.color = "#ff3b47";
+            btn.appendChild(mark);
+        }
+    });
+
+    // Update score
+    if (opt === q.answer) {
+        score += 50;
+        correct++;
+    } else {
+        score -= 50;
+        incorrect++;
+    }
+
+    document.getElementById("correctCount").innerText = correct;
+    document.getElementById("wrongCount").innerText = incorrect;
+    document.getElementById("scoreVal").innerText = score;
+
+    // After 0.8 sec → go to next question
+    setTimeout(() => {
+        currentQ++;
+        loadQuestion();
+    }, 800);
+}
+
+/* ---------------- PROGRESS BAR ----------------- */
+function updateProgress() {
+    let percent = ((currentQ) / questions.length) * 100;
+    document.getElementById("progressBarInner").style.width = percent + "%";
+}
+
+/* ---------------- RESULT SCREEN ----------------- */
+function showResults() {
+    document.getElementById("quizArea").style.display = "none";
+
+    document.getElementById("mainArea").innerHTML = `
+        <div style="text-align:center; padding:20px; color:white;">
+            <h2 style="margin-top:40px;">THANK YOU FOR YOUR PARTICIPATION</h2>
+
+            <div style="margin-top:30px;width:180px;height:180px;border-radius:50%;
+                        background:white;display:flex;justify-content:center;align-items:center;
+                        margin-left:auto;margin-right:auto;">
+                <span style="font-size:32px;color:#1f6bff;font-weight:bold;">
+                    ${score} pt
+                </span>
+            </div>
+
+            <div style="display:flex;justify-content:center;gap:20px;margin-top:40px;">
+                <div style="background:white;color:#1f6bff;padding:15px 25px;border-radius:12px;">
+                    <div>Total Q</div>
+                    <div style="font-size:22px;font-weight:bold;">${questions.length}</div>
+                </div>
+
+                <div style="background:white;color:#1f6bff;padding:15px 25px;border-radius:12px;">
+                    <div>Correct</div>
+                    <div style="font-size:22px;font-weight:bold;">${correct}</div>
+                </div>
+
+                <div style="background:white;color:#1f6bff;padding:15px 25px;border-radius:12px;">
+                    <div>Incorrect</div>
+                    <div style="font-size:22px;font-weight:bold;">${incorrect}</div>
+                </div>
+            </div>
+        </div>
+    `;
+}
 </script>
+
 </body>
 </html>
